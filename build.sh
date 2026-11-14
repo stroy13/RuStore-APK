@@ -16,9 +16,10 @@ R8JAR="${R8JAR:-/tmp/r8.jar}"
 JDKBIN="$(dirname "$(readlink -f "$(command -v javac)")")"
 export PATH="$JDKBIN:$PATH"
 [ -d "$SDK" ] || { echo "ОШИБКА: SDK не найден: $SDK (скачай build-tools и platform, см. README)"; exit 1; }
-BT="$(find "$SDK" -maxdepth 2 -name aapt2 | head -1 | xargs dirname)"
-PLAT="$(find "$SDK" -name android.jar | sort -V | tail -1)"  # самая свежая платформа
-[ -n "$BT" ] && [ -n "$PLAT" ] || { echo "ОШИБКА: в $SDK нет aapt2/android.jar"; exit 1; }
+AAPT2="$(find "$SDK" -type f -name aapt2 | sort -V | tail -1)"
+BT="${AAPT2%/aapt2}"
+PLAT="$(find "$SDK" -type f -name android.jar | sort -V | tail -1)"  # самая свежая платформа
+[ -n "$AAPT2" ] && [ -n "$PLAT" ] || { echo "ОШИБКА: в $SDK нет aapt2/android.jar"; exit 1; }
 echo "build-tools: $BT"
 echo "platform:    $PLAT"
 
