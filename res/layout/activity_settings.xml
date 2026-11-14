@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg">
+
+    <!-- шапка -->
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:paddingLeft="10dp"
+        android:paddingRight="16dp"
+        android:paddingTop="36dp"
+        android:paddingBottom="10dp">
+
+        <Button
+            android:id="@+id/back"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:fontFamily="sans-serif-medium"
+            android:text="←"
+            android:textAllCaps="false"
+            android:textColor="@color/textPrimary"
+            android:textSize="20sp"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:fontFamily="sans-serif-medium"
+            android:text="Настройки"
+            android:textColor="@color/textPrimary"
+            android:textSize="19sp"/>
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="24dp">
+
+            <!-- карточка: потоки загрузки -->
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="16dp"
+                android:layout_marginRight="16dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_card"
+                android:padding="18dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Скорость загрузки"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="15sp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Сколько соединений использовать одновременно. Больше — быстрее (до предела сети)."
+                    android:textColor="@color/textTertiary"
+                    android:textSize="12sp"/>
+
+                <TextView
+                    android:id="@+id/threadsValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/accent"
+                    android:textSize="17sp"/>
+
+                <SeekBar
+                    android:id="@+id/threadsSeek"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:max="15"
+                    android:progressTint="@color/accent"
+                    android:thumbTint="@color/accent"/>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="1"
+                        android:textColor="@color/textTertiary"
+                        android:textSize="11sp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="8 — оптимум"
+                        android:textColor="@color/textTertiary"
+                        android:textSize="11sp"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="right"
+                        android:text="16 — максимум"
+                        android:textColor="@color/textTertiary"
+                        android:textSize="11sp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- кнопка: сброс потоков -->
+            <TextView
+                android:id="@+id/resetThreads"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="16dp"
+                android:layout_marginRight="16dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/ripple_row"
+                android:gravity="center"
+                android:padding="14dp"
+                android:text="Вернуть оптимум (8)"
+                android:textColor="@color/accent"
+                android:textSize="13.5sp"/>
+
+            <!-- карточка: обновления приложений -->
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="16dp"
+                android:layout_marginRight="16dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card"
+                android:padding="18dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Обновления приложений"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="15sp"/>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Показывать приложения с другой подписью"
+                            android:textColor="@color/textPrimary"
+                            android:textSize="14sp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="Обновление таких не установится поверх — в списке они с предупреждением"
+                            android:textColor="@color/textTertiary"
+                            android:textSize="12sp"/>
+                    </LinearLayout>
+
+                    <Switch
+                        android:id="@+id/showSigSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="12dp"
+                        android:padding="4dp"
+                        android:thumbTint="@color/switch_thumb"
+                        android:trackTint="@color/switch_track"/>
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="12dp"
+                    android:background="@color/border"/>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Автообновление при запуске"
+                            android:textColor="@color/textPrimary"
+                            android:textSize="14sp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="Сам найдёт, скачает и запустит установку обновлений с той же подписью"
+                            android:textColor="@color/textTertiary"
+                            android:textSize="12sp"/>
+                    </LinearLayout>
+
+                    <Switch
+                        android:id="@+id/autoUpdSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="12dp"
+                        android:padding="4dp"
+                        android:thumbTint="@color/switch_thumb"
+                        android:trackTint="@color/switch_track"/>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/exclusionsRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/btn_quiet"
+                    android:gravity="center"
+                    android:text="Список исключений из автообновления"
+                    android:textColor="@color/accent"
+                    android:textSize="13.5sp"/>
+
+                <TextView
+                    android:id="@+id/hiddenRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/btn_quiet"
+                    android:gravity="center"
+                    android:text="Скрытые из списка обновлений"
+                    android:textColor="@color/accent"
+                    android:textSize="13.5sp"/>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="12dp"
+                    android:background="@color/border"/>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Проверять в фоне"
+                            android:textColor="@color/textPrimary"
+                            android:textSize="14sp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="Без запуска приложения: о найденных обновлениях сообщит уведомлением"
+                            android:textColor="@color/textTertiary"
+                            android:textSize="12sp"/>
+                    </LinearLayout>
+
+                    <Switch
+                        android:id="@+id/bgSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="12dp"
+                        android:padding="4dp"
+                        android:thumbTint="@color/switch_thumb"
+                        android:trackTint="@color/switch_track"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/bgDetails"
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Как часто проверять"
+                        android:textColor="@color/textSecondary"
+                        android:textSize="12sp"/>
+
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp">
+
+                        <TextView android:id="@+id/chip1" style="@style/Chip" android:text="1 ч"/>
+                        <TextView android:id="@+id/chip3" style="@style/Chip" android:text="3 ч"/>
+                        <TextView android:id="@+id/chip6" style="@style/Chip" android:text="6 ч"/>
+                        <TextView android:id="@+id/chip12" style="@style/Chip" android:text="12 ч"/>
+                        <TextView android:id="@+id/chip24" style="@style/Chip" android:text="24 ч"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:gravity="center_vertical">
+
+                        <LinearLayout
+                            android:orientation="vertical"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Только по Wi-Fi"
+                                android:textColor="@color/textPrimary"
+                                android:textSize="14sp"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="Не тратить мобильный трафик"
+                                android:textColor="@color/textTertiary"
+                                android:textSize="12sp"/>
+                        </LinearLayout>
+
+                        <Switch
+                            android:id="@+id/wifiSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginLeft="12dp"
+                            android:padding="4dp"
+                            android:thumbTint="@color/switch_thumb"
+                            android:trackTint="@color/switch_track"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Загрузки -->
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="16dp"
+                android:layout_marginRight="16dp"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_card"
+                android:padding="18dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Загрузки и обновления"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="15sp"/>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Удалять APK после установки"
+                            android:textColor="@color/textPrimary"
+                            android:textSize="14sp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="Установленные файлы стираются — из кэша и «Загрузок». Запись в истории остаётся"
+                            android:textColor="@color/textTertiary"
+                            android:textSize="12sp"/>
+                    </LinearLayout>
+
+                    <Switch
+                        android:id="@+id/autoCleanSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="12dp"
+                        android:padding="4dp"
+                        android:thumbTint="@color/switch_thumb"
+                        android:trackTint="@color/switch_track"/>
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="12dp"
+                    android:background="@color/border"/>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Обновлять приложение"
+                            android:textColor="@color/textPrimary"
+                            android:textSize="14sp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="Диалог с новой версией при запуске"
+                            android:textColor="@color/textTertiary"
+                            android:textSize="12sp"/>
+                    </LinearLayout>
+
+                    <Switch
+                        android:id="@+id/otaSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="12dp"
+                        android:padding="4dp"
+                        android:thumbTint="@color/switch_thumb"
+                        android:trackTint="@color/switch_track"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- сноска -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:layout_marginRight="20dp"
+                android:layout_marginTop="12dp"
+                android:text="Значение применяется сразу и сохраняется. Слишком много потоков на слабой сети может замедлить загрузку — если сомневаешься, оставь 8."
+                android:textColor="@color/textTertiary"
+                android:textSize="11.5sp"/>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

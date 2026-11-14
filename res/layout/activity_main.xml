@@ -1,0 +1,733 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg">
+
+    <!-- ==================== контент + браузер ==================== -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+    <ScrollView
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:paddingLeft="20dp"
+                android:paddingRight="20dp"
+                android:paddingTop="40dp"
+                android:paddingBottom="8dp">
+
+                <!-- шапка: меню + иконка + название -->
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical">
+
+                    <Button
+                        android:id="@+id/menuBtn"
+                        android:layout_width="42dp"
+                        android:layout_height="42dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="?android:attr/selectableItemBackgroundBorderless"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="≡"
+                        android:textAllCaps="false"
+                        android:textColor="@color/textPrimary"
+                        android:textSize="24sp"/>
+
+                    <ImageView
+                        android:layout_width="46dp"
+                        android:layout_height="46dp"
+                        android:contentDescription="Иконка"
+                        android:src="@mipmap/ic_launcher"/>
+
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="RuStore → APK"
+                            android:textColor="@color/textPrimary"
+                            android:textSize="19sp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:text="Скачивание и установка напрямую с серверов RuStore"
+                            android:textColor="@color/textSecondary"
+                            android:textSize="12.5sp"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <EditText
+                    android:id="@+id/input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="22dp"
+                    android:background="@drawable/bg_field"
+                    android:fontFamily="sans-serif"
+                    android:hint="Ссылка на приложение или имя пакета"
+                    android:imeOptions="actionGo"
+                    android:inputType="textUri"
+                    android:maxLines="1"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
+                    android:paddingTop="15dp"
+                    android:paddingBottom="15dp"
+                    android:textColor="@color/textPrimary"
+                    android:textColorHint="@color/textTertiary"
+                    android:textSize="14.5sp"/>
+
+                <Button
+                    android:id="@+id/find"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/btn_accent"
+                    android:fontFamily="sans-serif-medium"
+                    android:padding="14dp"
+                    android:text="Найти"
+                    android:textAllCaps="false"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="14.5sp"/>
+
+                <ProgressBar
+                    android:id="@+id/progress"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="16dp"
+                    android:indeterminateTint="@color/accent"
+                    android:visibility="gone"/>
+
+                <TextView
+                    android:id="@+id/status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:textColor="@color/textSecondary"
+                    android:textSize="12.5sp"
+                    android:visibility="gone"/>
+
+                <LinearLayout
+                    android:id="@+id/card"
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/bg_card"
+                    android:padding="16dp"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:id="@+id/icon"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"/>
+
+                        <LinearLayout
+                            android:orientation="vertical"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1">
+
+                            <TextView
+                                android:id="@+id/appname"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:textColor="@color/textPrimary"
+                                android:textSize="16sp"/>
+
+                            <TextView
+                                android:id="@+id/dev"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:textColor="@color/textSecondary"
+                                android:textSize="13sp"/>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/meta"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:background="@drawable/bg_chip"
+                        android:paddingLeft="12dp"
+                        android:paddingRight="12dp"
+                        android:paddingTop="7dp"
+                        android:paddingBottom="7dp"
+                        android:textColor="@color/textSecondary"
+                        android:textSize="12sp"/>
+
+                    <!-- Что нового -->
+                    <LinearLayout
+                        android:id="@+id/whatsNewBox"
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_note"
+                        android:paddingLeft="14dp"
+                        android:paddingRight="14dp"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="11dp"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/whatsNewTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:textColor="@color/textSecondary"
+                            android:textSize="12sp"/>
+
+                        <TextView
+                            android:id="@+id/whatsNewText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:lineSpacingExtra="2dp"
+                            android:maxLines="4"
+                            android:ellipsize="end"
+                            android:textColor="@color/textSecondary"
+                            android:textSize="12.5sp"/>
+
+                        <TextView
+                            android:id="@+id/whatsNewMore"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:background="?android:attr/selectableItemBackground"
+                            android:fontFamily="sans-serif-medium"
+                            android:paddingTop="2dp"
+                            android:paddingBottom="2dp"
+                            android:text="Показать полностью"
+                            android:textColor="@color/accent"
+                            android:textSize="12sp"
+                            android:visibility="gone"/>
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/pkg"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textColor="@color/textTertiary"
+                        android:textSize="11.5sp"/>
+
+                    <Button
+                        android:id="@+id/download"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/btn_accent"
+                        android:fontFamily="sans-serif-medium"
+                        android:padding="13dp"
+                        android:text="Скачать и установить"
+                        android:textAllCaps="false"
+                        android:textColor="@color/textPrimary"
+                        android:textSize="14.5sp"/>
+
+                    <CheckBox
+                        android:id="@+id/saveCopy"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:buttonTint="@color/accent"
+                        android:text="Сохранять копию в «Загрузки»"
+                        android:textColor="@color/textSecondary"
+                        android:textSize="12.5sp"/>
+
+                    <TextView
+                        android:id="@+id/dlStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:textColor="@color/textSecondary"
+                        android:textSize="12.5sp"
+                        android:visibility="gone"/>
+
+                    <ProgressBar
+                        android:id="@+id/dlProgress"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:max="10000"
+                        android:indeterminate="false"
+                        android:progressBackgroundTint="@color/surface2"
+                        android:progressTint="@color/accent"
+                        android:visibility="gone"/>
+
+                    <LinearLayout
+                        android:id="@+id/dlControls"
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:visibility="gone">
+
+                        <Button
+                            android:id="@+id/pauseBtn"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="@drawable/btn_quiet"
+                            android:fontFamily="sans-serif-medium"
+                            android:padding="12dp"
+                            android:text="❚❚  Пауза"
+                            android:textAllCaps="false"
+                            android:textColor="@color/textPrimary"
+                            android:textSize="13.5sp"/>
+
+                        <Button
+                            android:id="@+id/cancelBtn"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/btn_quiet"
+                            android:fontFamily="sans-serif-medium"
+                            android:padding="12dp"
+                            android:text="Отмена"
+                            android:textAllCaps="false"
+                            android:textColor="@color/danger"
+                            android:textSize="13.5sp"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="Файлы получаются с официальных серверов RuStore. Управление местом — в истории."
+                    android:textColor="@color/textTertiary"
+                    android:textSize="11.5sp"/>
+
+                <!-- Блок поддержки: использует свободное место на главном экране -->
+                <LinearLayout
+                    android:id="@+id/donateCard"
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="22dp"
+                    android:background="@drawable/bg_card"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical">
+
+                        <FrameLayout
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
+                            android:background="@drawable/bg_donate_circle">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_heart"
+                                android:contentDescription="Поддержать"/>
+
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:orientation="vertical"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="Поддержите проект"
+                                android:textColor="@color/textPrimary"
+                                android:textSize="14.5sp"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="Приложение бесплатно и без рекламы. Ваша помощь помогает развивать его дальше."
+                                android:textColor="@color/textSecondary"
+                                android:textSize="12.5sp"
+                                android:lineSpacingExtra="1dp"/>
+
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/donateBtn"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:background="@drawable/btn_accent"
+                        android:fontFamily="sans-serif-medium"
+                        android:padding="12dp"
+                        android:text="♥  Поддержать на Спасибомир"
+                        android:textAllCaps="false"
+                        android:textColor="@color/textPrimary"
+                        android:textSize="13.5sp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="8dp"
+                        android:text="Безопасный платёж • Спасибо за поддержку!"
+                        android:textColor="@color/textTertiary"
+                        android:textSize="11sp"/>
+
+                </LinearLayout>
+            </LinearLayout>
+
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- переключатель встроенного браузера RuStore -->
+    <TextView
+        android:id="@+id/webToggle"
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="6dp"
+        android:background="@drawable/btn_quiet"
+        android:gravity="center"
+        android:text="Браузер RuStore  ▾"
+        android:textAllCaps="false"
+        android:textColor="@color/textSecondary"
+        android:textSize="13.5sp"/>
+
+    <!-- встроенный браузер RuStore -->
+    <LinearLayout
+        android:id="@+id/browserBox"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="3"
+        android:layout_marginLeft="12dp"
+        android:layout_marginRight="12dp"
+        android:layout_marginBottom="4dp"
+        android:background="@drawable/bg_card"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:id="@+id/webProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginRight="8dp"
+            android:indeterminate="false"
+            android:max="100"
+            android:progressTint="@color/accent"
+            android:visibility="gone"/>
+
+    </LinearLayout>
+
+    <!-- подвал: в самом низу экрана -->
+    <TextView
+        android:id="@+id/madeBy"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingTop="4dp"
+        android:paddingBottom="10dp"
+        android:textColor="@color/textTertiary"
+        android:textSize="12sp"/>
+    </LinearLayout>
+
+    <!-- ==================== затемнение ==================== -->
+    <View
+        android:id="@+id/scrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0"
+        android:background="#99000000"
+        android:visibility="gone"/>
+
+    <!-- ==================== боковое меню ==================== -->
+    <LinearLayout
+        android:id="@+id/drawer"
+        android:orientation="vertical"
+        android:layout_width="288dp"
+        android:layout_height="match_parent"
+        android:background="@color/surface"
+        android:elevation="8dp"
+        android:visibility="gone">
+
+        <!-- шапка меню -->
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingLeft="20dp"
+            android:paddingRight="16dp"
+            android:paddingTop="44dp"
+            android:paddingBottom="18dp">
+
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:contentDescription="Иконка"
+                android:src="@mipmap/ic_launcher"/>
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="RuStore → APK"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="15sp"/>
+
+                <TextView
+                    android:id="@+id/drawerVersion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/textTertiary"
+                    android:textSize="11.5sp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/border"/>
+
+        <!-- пункты меню — как на примере, вектор 20dp, монохром -->
+        <LinearLayout
+            android:id="@+id/mHome"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/drawer_item"
+            android:gravity="center_vertical"
+            android:paddingLeft="20dp"
+            android:paddingRight="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_home_3d"
+                android:contentDescription=""/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Главная"
+                android:textColor="@color/textPrimary"
+                android:textSize="14.5sp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/mHistory"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/drawer_item"
+            android:gravity="center_vertical"
+            android:paddingLeft="20dp"
+            android:paddingRight="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_history_3d"
+                android:contentDescription=""/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="История скачиваний"
+                android:textColor="@color/textPrimary"
+                android:textSize="14.5sp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/mUpdates"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/drawer_item"
+            android:gravity="center_vertical"
+            android:paddingLeft="20dp"
+            android:paddingRight="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_updates_3d"
+                android:contentDescription=""/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Обновления приложений"
+                android:textColor="@color/textPrimary"
+                android:textSize="14.5sp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/mSettings"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/drawer_item"
+            android:gravity="center_vertical"
+            android:paddingLeft="20dp"
+            android:paddingRight="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_settings_3d"
+                android:contentDescription=""/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Настройки"
+                android:textColor="@color/textPrimary"
+                android:textSize="14.5sp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/mDonate"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/drawer_item"
+            android:gravity="center_vertical"
+            android:paddingLeft="20dp"
+            android:paddingRight="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_donate_3d"
+                android:contentDescription=""/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Поддержать проект"
+                android:textColor="@color/accent"
+                android:textSize="14.5sp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/mLicense"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/drawer_item"
+            android:gravity="center_vertical"
+            android:paddingLeft="20dp"
+            android:paddingRight="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_license_3d"
+                android:contentDescription=""/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Лицензионное соглашение"
+                android:textColor="@color/textPrimary"
+                android:textSize="14.5sp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/mAbout"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/drawer_item"
+            android:gravity="center_vertical"
+            android:paddingLeft="20dp"
+            android:paddingRight="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_about_3d"
+                android:contentDescription=""/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="О программе"
+                android:textColor="@color/textPrimary"
+                android:textSize="14.5sp"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+    </LinearLayout>
+</FrameLayout>

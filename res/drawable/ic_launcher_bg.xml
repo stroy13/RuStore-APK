@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- диагональный градиент: фиолетовый (верх-лево) → синий → голубой (низ-право) -->
+    <gradient android:angle="315"
+        android:startColor="#8937C7"
+        android:centerColor="#4066E2"
+        android:endColor="#00B8D7"/>
+</shape>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="ru.rustoredl"
+    android:versionCode="56"
+    android:versionName="2.4">
+
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="37"/>
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- условие «только Wi-Fi» у фонового задания (JobScheduler требует) -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <!-- уведомления о найденных в фоне обновлениях (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- фоновое задание переживает перезагрузку -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- «Обновления»: список установленных приложений (Android 11+) -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+    <!-- запись копий в Загрузки нужна только на Android 8–9; на 10+ используется MediaStore -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+
+    <!-- видимость пакетов (Android 11+): без этого 4PDA скрыт, и он «не установлен» -->
+    <queries>
+        <package android:name="ru.fourpda.client"/>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https" android:host="4pda.to"/>
+        </intent>
+    </queries>
+
+    <application
+        android:name=".App"
+        android:label="RuStore → APK"
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@style/AppTheme"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:allowBackup="false">
+
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".HistoryActivity" android:exported="false"/>
+        <activity android:name=".SettingsActivity" android:exported="false"/>
+        <activity android:name=".UpdatesActivity" android:exported="false"/>
+
+        <service android:name=".DownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"/>
+        <service android:name=".UpdatesJobService"
+            android:exported="true"
+            android:permission="android.permission.BIND_JOB_SERVICE"/>
+
+        <receiver android:name=".InstallReceiver" android:exported="false"/>
+    </application>
+</manifest>
