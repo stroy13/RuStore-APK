@@ -45,30 +45,44 @@ jobs:
           echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
           echo "Using Android SDK at $SDK_ROOT"
 
-      - name: Install Android API 37 and latest Build Tools
+      - name: Ensure Android API 37 and Build Tools are available
         shell: bash
         run: |
           set -euo pipefail
-          if ! LICENSE_OUTPUT="$(python3 -c "print('y\\n' * 100)" | sdkmanager --sdk_root="$ANDROID_HOME" --licenses 2>&1)"; then
-            DETAIL="$(printf '%s' "$LICENSE_OUTPUT" | tail -n 8 | tr '\n' ' ')"
-            echo "::error title=Android SDK license setup failed::$DETAIL"
-            exit 1
+          SDK_PACKAGES=()
+          if [ ! -f "$ANDROID_HOME/platforms/android-37/android.jar" ]; then
+            SDK_PACKAGES+=('platforms;android-37')
           fi
-          if ! PACKAGE_LIST="$(sdkmanager --sdk_root="$ANDROID_HOME" --list 2>&1)"; then
-            DETAIL="$(printf '%s' "$PACKAGE_LIST" | tail -n 8 | tr '\n' ' ')"
-            echo "::error title=Android SDK package listing failed::$DETAIL"
-            exit 1
+          BT_AAPT2="$(find "$ANDROID_HOME/build-tools" -type f -name aapt2 2>/dev/null | sort -V | tail -n 1)"
+          BT_DIR="${BT_AAPT2%/aapt2}"
+          if [ -z "$BT_AAPT2" ] || [ ! -x "$BT_DIR/d8" ] || [ ! -x "$BT_DIR/zipalign" ] || [ ! -x "$BT_DIR/apksigner" ]; then
+            if ! PACKAGE_LIST="$(sdkmanager --sdk_root="$ANDROID_HOME" --list 2>&1)"; then
+              DETAIL="$(printf '%s' "$PACKAGE_LIST" | tail -n 8 | tr '\n' ' ')"
+              echo "::error title=Android SDK package listing failed::$DETAIL"
+              exit 1
+            fi
+            BT_PACKAGE="$(printf '%s' "$PACKAGE_LIST" \
+              | sed -nE 's/^[[:space:]]*(build-tools;[0-9]+\.[0-9]+\.[0-9]+)[[:space:]]*\|.*/\1/p' \
+              | sort -Vu | tail -n 1)"
+            test -n "$BT_PACKAGE" || { echo 'Could not find an Android Build Tools package in sdkmanager output'; exit 1; }
+            SDK_PACKAGES+=("$BT_PACKAGE")
+          else
+            echo "Using preinstalled Build Tools $(basename "$BT_DIR")"
           fi
-          BT_PACKAGE="$(printf '%s' "$PACKAGE_LIST" \
-            | sed -nE 's/^[[:space:]]*(build-tools;[0-9]+\.[0-9]+\.[0-9]+)[[:space:]]*\|.*/\1/p' \
-            | sort -Vu | tail -n 1)"
-          test -n "$BT_PACKAGE" || { echo 'Could not find an Android Build Tools package in sdkmanager output'; exit 1; }
-          if ! INSTALL_OUTPUT="$(sdkmanager --sdk_root="$ANDROID_HOME" 'platforms;android-37' "$BT_PACKAGE" 2>&1)"; then
-            DETAIL="$(printf '%s' "$INSTALL_OUTPUT" | tail -n 8 | tr '\n' ' ')"
-            echo "::error title=Android SDK package installation failed::$DETAIL"
-            exit 1
+          if [ "${#SDK_PACKAGES[@]}" -gt 0 ]; then
+            if ! LICENSE_OUTPUT="$(python3 -c "print('y\\n' * 100)" | sdkmanager --sdk_root="$ANDROID_HOME" --licenses 2>&1)"; then
+              DETAIL="$(printf '%s' "$LICENSE_OUTPUT" | tail -n 8 | tr '\n' ' ')"
+              echo "::error title=Android SDK license setup failed::$DETAIL"
+              exit 1
+            fi
+            if ! INSTALL_OUTPUT="$(sdkmanager --sdk_root="$ANDROID_HOME" "${SDK_PACKAGES[@]}" 2>&1)"; then
+              DETAIL="$(printf '%s' "$INSTALL_OUTPUT" | tail -n 8 | tr '\n' ' ')"
+              echo "::error title=Android SDK package installation failed::$DETAIL"
+              exit 1
+            fi
           fi
-          echo "Installed $BT_PACKAGE and Android API 37"
+          test -f "$ANDROID_HOME/platforms/android-37/android.jar" || { echo 'Android API 37 was not installed'; exit 1; }
+          echo 'Android API 37 and required Build Tools are ready'
 
       - name: Download R8
         shell: bash
