@@ -1,0 +1,121 @@
+name: Build and publish signed APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag (must match AndroidManifest.xml versionName, e.g. v2.4)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rustoredl-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK tools
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android API 37 and latest Build Tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          BT_PACKAGE="$(sdkmanager --list \
+            | sed -nE 's/^[[:space:]]*(build-tools;[0-9]+\.[0-9]+\.[0-9]+)[[:space:]]*\|.*/\1/p' \
+            | sort -Vu | tail -n 1)"
+          test -n "$BT_PACKAGE" || { echo 'Could not find an Android Build Tools package'; exit 1; }
+          sdkmanager --sdk_root="$ANDROID_HOME" 'platforms;android-37' "$BT_PACKAGE"
+          echo "Installed $BT_PACKAGE and Android API 37"
+
+      - name: Download R8
+        shell: bash
+        run: |
+          set -euo pipefail
+          R8_VERSION="$(python3 - <<'PY'
+          import urllib.request
+          import xml.etree.ElementTree as ET
+          url = 'https://dl.google.com/dl/android/maven2/com/android/tools/r8/maven-metadata.xml'
+          root = ET.fromstring(urllib.request.urlopen(url, timeout=30).read())
+          version = root.findtext('./versioning/release') or root.findtext('./versioning/latest')
+          if not version:
+              raise SystemExit('R8 version metadata did not contain release/latest')
+          print(version)
+          PY
+          )"
+          curl --fail --location --silent --show-error \
+            "https://dl.google.com/dl/android/maven2/com/android/tools/r8/${R8_VERSION}/r8-${R8_VERSION}.jar" \
+            --output "$RUNNER_TEMP/r8.jar"
+          echo "Using R8 $R8_VERSION"
+
+      - name: Validate release version and signing secrets
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          RUSTOREDL_KEYSTORE_BASE64: ${{ secrets.RUSTOREDL_KEYSTORE_BASE64 }}
+          RUSTOREDL_KEYSTORE_PASSWORD: ${{ secrets.RUSTOREDL_KEYSTORE_PASSWORD }}
+          RUSTOREDL_KEY_ALIAS: ${{ secrets.RUSTOREDL_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+          tag = os.environ['RELEASE_TAG']
+          root = ET.parse('AndroidManifest.xml').getroot()
+          version = root.get('{http://schemas.android.com/apk/res/android}versionName')
+          if tag != f'v{version}':
+              raise SystemExit(f'{tag!r} must match manifest versionName {version!r} as v{version}')
+          PY
+          for name in RUSTOREDL_KEYSTORE_BASE64 RUSTOREDL_KEYSTORE_PASSWORD RUSTOREDL_KEY_ALIAS; do
+            if [ -z "${!name:-}" ]; then
+              echo "Required repository Actions secret is missing: $name"
+              exit 1
+            fi
+          done
+          printf '%s' "$RUSTOREDL_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+          chmod 600 "$RUNNER_TEMP/release.keystore"
+
+      - name: Build and sign APK
+        shell: bash
+        env:
+          RUSTOREDL_KEYSTORE_PASSWORD: ${{ secrets.RUSTOREDL_KEYSTORE_PASSWORD }}
+          RUSTOREDL_KEY_ALIAS: ${{ secrets.RUSTOREDL_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          test -n "$SDK_ROOT" || { echo 'Android SDK root is not configured'; exit 1; }
+          SDK="$SDK_ROOT" \
+          R8JAR="$RUNNER_TEMP/r8.jar" \
+          KS="$RUNNER_TEMP/release.keystore" \
+          KS_PASS="$RUSTOREDL_KEYSTORE_PASSWORD" \
+          KS_ALIAS="$RUSTOREDL_KEY_ALIAS" \
+          ./build.sh
+
+      - name: Publish GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release create "$RELEASE_TAG" RuStoreDL.apk \
+            --title "RuStoreDL $RELEASE_TAG" \
+            --target "$GITHUB_SHA" \
+            --generate-notes
+          gh release view "$RELEASE_TAG" --json url --jq .url
