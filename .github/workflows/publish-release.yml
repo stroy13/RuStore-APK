@@ -49,12 +49,25 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 -c "print('y\\n' * 100)" | sdkmanager --licenses >/dev/null
-          BT_PACKAGE="$(sdkmanager --list \
+          if ! LICENSE_OUTPUT="$(python3 -c "print('y\\n' * 100)" | sdkmanager --sdk_root="$ANDROID_HOME" --licenses 2>&1)"; then
+            DETAIL="$(printf '%s' "$LICENSE_OUTPUT" | tail -n 8 | tr '\n' ' ')"
+            echo "::error title=Android SDK license setup failed::$DETAIL"
+            exit 1
+          fi
+          if ! PACKAGE_LIST="$(sdkmanager --sdk_root="$ANDROID_HOME" --list 2>&1)"; then
+            DETAIL="$(printf '%s' "$PACKAGE_LIST" | tail -n 8 | tr '\n' ' ')"
+            echo "::error title=Android SDK package listing failed::$DETAIL"
+            exit 1
+          fi
+          BT_PACKAGE="$(printf '%s' "$PACKAGE_LIST" \
             | sed -nE 's/^[[:space:]]*(build-tools;[0-9]+\.[0-9]+\.[0-9]+)[[:space:]]*\|.*/\1/p' \
             | sort -Vu | tail -n 1)"
-          test -n "$BT_PACKAGE" || { echo 'Could not find an Android Build Tools package'; exit 1; }
-          sdkmanager --sdk_root="$ANDROID_HOME" 'platforms;android-37' "$BT_PACKAGE"
+          test -n "$BT_PACKAGE" || { echo 'Could not find an Android Build Tools package in sdkmanager output'; exit 1; }
+          if ! INSTALL_OUTPUT="$(sdkmanager --sdk_root="$ANDROID_HOME" 'platforms;android-37' "$BT_PACKAGE" 2>&1)"; then
+            DETAIL="$(printf '%s' "$INSTALL_OUTPUT" | tail -n 8 | tr '\n' ' ')"
+            echo "::error title=Android SDK package installation failed::$DETAIL"
+            exit 1
+          fi
           echo "Installed $BT_PACKAGE and Android API 37"
 
       - name: Download R8
