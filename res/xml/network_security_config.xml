@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- запрет cleartext и доверие только системным CA во всех соединениях -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+
+    <!-- жёсткий пин для всех поддоменов rustore.ru (leaf + intermediate + root).
+         При ротации сертификата обновить пины (см. README, раздел «Защита»). -->
+    <domain-config>
+        <domain includeSubdomains="true">rustore.ru</domain>
+        <pin-set expiration="2028-09-01">
+            <pin digest="SHA-256">xPZ60xFS0KfUtEAahP4IevLdlOUNCVXRfH1dMzPp5BE=</pin>
+            <pin digest="SHA-256">rk2I2etvSahZka3FPKyvABNS0NJaDCduKDeQ5Vvg/Xs=</pin>
+            <pin digest="SHA-256">aTyaprJFs7AmFjd1CGPq22wkihblLW9LyQyGu/MtcEI=</pin>
+        </pin-set>
+    </domain-config>
+</network-security-config>

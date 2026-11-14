@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="false"
+    android:scrollbars="vertical">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_card"
+        android:padding="24dp"
+        android:gravity="center_horizontal">
+
+        <!-- Иконка приложения -->
+        <ImageView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@mipmap/ic_launcher"
+            android:contentDescription="Иконка"/>
+
+        <!-- Заголовок -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="Доступно обновление"
+            android:textColor="@color/textPrimary"
+            android:textSize="18sp"/>
+
+        <!-- Чип версии + размер -->
+        <TextView
+            android:id="@+id/otaVersion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_chip"
+            android:paddingLeft="14dp"
+            android:paddingRight="14dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:textColor="@color/textSecondary"
+            android:textSize="12.5sp"/>
+
+        <!-- Блок «Что нового» — внутри ScrollView, но сам бокс не скроллится, скроллится весь диалог -->
+        <LinearLayout
+            android:id="@+id/otaNotesBox"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_note"
+            android:paddingLeft="14dp"
+            android:paddingRight="14dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="Что нового:"
+                android:textColor="@color/textPrimary"
+                android:textSize="12.5sp"/>
+
+            <TextView
+                android:id="@+id/otaNotes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:lineSpacingExtra="2dp"
+                android:textColor="@color/textSecondary"
+                android:textSize="12.5sp"/>
+
+        </LinearLayout>
+
+        <!-- Кнопки — всегда внизу, при длинном списке уезжают вниз но доступны скроллом -->
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center_vertical">
+
+            <Button
+                android:id="@+id/otaLater"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/btn_ghost"
+                android:fontFamily="sans-serif-medium"
+                android:padding="12dp"
+                android:text="Позже"
+                android:textAllCaps="false"
+                android:textColor="@color/textSecondary"
+                android:textSize="13.5sp"/>
+
+            <Button
+                android:id="@+id/otaUpdate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:background="@drawable/btn_accent"
+                android:fontFamily="sans-serif-medium"
+                android:padding="12dp"
+                android:text="Обновить"
+                android:textAllCaps="false"
+                android:textColor="@color/textPrimary"
+                android:textSize="13.5sp"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

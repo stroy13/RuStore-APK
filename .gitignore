@@ -1,0 +1,25 @@
+# Signing credentials — never commit release or debug keys / passwords
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.key
+*.pem
+keystore.info
+
+# Build outputs and release artifacts
+/obj/
+/gen/
+/build/
+*.apk
+*.aab
+*.idsig
+/mapping.txt
+
+# Local tooling, environment and generated files
+.gradle/
+.idea/
+local.properties
+*.log
+*.zip
+.DS_Store

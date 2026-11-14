@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Автогенерация build.sh: ожидаемый SHA-256 сертификата подписи -->
+<resources>
+    <string name="cert_sha256" translatable="false">379f836ec3bf1fb0368686c8458d3fc27d6304c4f03110c0b7ae7a4dcb0230a4</string>
+</resources>

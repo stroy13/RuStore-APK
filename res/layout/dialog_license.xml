@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_card"
+    android:padding="22dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:text="Лицензионное соглашение"
+        android:textColor="@color/textPrimary"
+        android:textSize="17sp"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_marginTop="12dp"
+        android:scrollbars="none">
+
+        <TextView
+            android:id="@+id/licenseText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:lineSpacingExtra="2dp"
+            android:textColor="@color/textSecondary"
+            android:textSize="12sp"/>
+    </ScrollView>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/btnDecline"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/btn_quiet"
+            android:fontFamily="sans-serif-medium"
+            android:padding="12dp"
+            android:text="Не принимаю"
+            android:textAllCaps="false"
+            android:textColor="@color/danger"
+            android:textSize="13.5sp"/>
+
+        <Button
+            android:id="@+id/btnAccept"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:background="@drawable/btn_accent"
+            android:fontFamily="sans-serif-medium"
+            android:padding="12dp"
+            android:text="Принимаю"
+            android:textAllCaps="false"
+            android:textColor="@color/textPrimary"
+            android:textSize="13.5sp"/>
+    </LinearLayout>
+</LinearLayout>

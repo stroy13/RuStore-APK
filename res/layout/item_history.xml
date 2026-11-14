@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:background="@drawable/ripple_row"
+    android:gravity="center_vertical"
+    android:padding="14dp">
+
+    <TextView
+        android:id="@+id/hAvatar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/bg_avatar"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:textColor="@color/accent"
+        android:textSize="16sp"/>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/hName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="1"
+            android:textColor="@color/textPrimary"
+            android:textSize="14.5sp"/>
+
+        <TextView
+            android:id="@+id/hSub"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/textTertiary"
+            android:textSize="11.5sp"/>
+
+        <TextView
+            android:id="@+id/hState"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:textColor="@color/success"
+            android:textSize="11sp"/>
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnInstall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:fontFamily="sans-serif-medium"
+        android:minWidth="0dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:text="Установить"
+        android:textAllCaps="false"
+        android:textColor="@color/accent"
+        android:textSize="12.5sp"/>
+
+    <Button
+        android:id="@+id/btnDel"
+        android:layout_width="32dp"
+        android:layout_height="40dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:minWidth="0dp"
+        android:text="⋯"
+        android:textAllCaps="false"
+        android:textColor="@color/textSecondary"
+        android:textSize="17sp"/>
+</LinearLayout>
