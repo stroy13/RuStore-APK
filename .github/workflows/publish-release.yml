@@ -128,7 +128,7 @@ jobs:
           RUSTOREDL_KEY_ALIAS: ${{ secrets.RUSTOREDL_KEY_ALIAS }}
         run: |
           set -euo pipefail
-          python3 - <<'PY'
+          if ! python3 - <<'PY'
           import os
           import xml.etree.ElementTree as ET
           tag = os.environ['RELEASE_TAG']
@@ -137,14 +137,25 @@ jobs:
           if tag != f'v{version}':
               raise SystemExit(f'{tag!r} must match manifest versionName {version!r} as v{version}')
           PY
+          then
+            echo '::error title=Release tag mismatch::The supplied tag must match AndroidManifest.xml versionName (v2.4).'
+            exit 1
+          fi
           for name in RUSTOREDL_KEYSTORE_BASE64 RUSTOREDL_KEYSTORE_PASSWORD RUSTOREDL_KEY_ALIAS; do
             if [ -z "${!name:-}" ]; then
-              echo "Required repository Actions secret is missing: $name"
+              echo "::error title=Missing release secret::$name is empty or was not added under Repository secrets."
               exit 1
             fi
           done
-          printf '%s' "$RUSTOREDL_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+          if ! printf '%s' "$RUSTOREDL_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"; then
+            echo '::error title=Invalid keystore secret::RUSTOREDL_KEYSTORE_BASE64 is not valid Base64.'
+            exit 1
+          fi
           chmod 600 "$RUNNER_TEMP/release.keystore"
+          if ! keytool -list -keystore "$RUNNER_TEMP/release.keystore" -storepass "$RUSTOREDL_KEYSTORE_PASSWORD" -alias "$RUSTOREDL_KEY_ALIAS" >/dev/null 2>&1; then
+            echo '::error title=Keystore validation failed::Check the Base64 value, keystore password, and alias; do not paste them into logs or chat.'
+            exit 1
+          fi
 
       - name: Build and sign APK
         shell: bash
