@@ -53,13 +53,24 @@ jobs:
           TOOL_LIST="$(find "$ANDROID_HOME/build-tools" -type f -name aapt2 2>/dev/null | sed -E 's#^.*/build-tools/##; s#/aapt2$##' | sort -V | tr '\n' ',')"
           echo "::notice title=Runner Android SDK inventory::platforms=${PLATFORM_LIST:-none}; build-tools=${TOOL_LIST:-none}"
           SDK_PACKAGES=()
-          if [ ! -f "$ANDROID_HOME/platforms/android-37/android.jar" ]; then
-            SDK_PACKAGES+=('platforms;android-37')
+          PACKAGE_LIST=""
+          PLATFORM37_JAR="$(find "$ANDROID_HOME/platforms" -type f -name android.jar 2>/dev/null | grep -E '/android-37(\.[0-9]+)*(-ext[0-9]+)?/android.jar$' | sort -V | tail -n 1)"
+          if [ -z "$PLATFORM37_JAR" ]; then
+            if ! PACKAGE_LIST="$(sdkmanager --sdk_root="$ANDROID_HOME" --list 2>&1)"; then
+              DETAIL="$(printf '%s' "$PACKAGE_LIST" | tail -n 8 | tr '\n' ' ')"
+              echo "::error title=Android SDK package listing failed::$DETAIL"
+              exit 1
+            fi
+            PLATFORM_PACKAGE="$(printf '%s' "$PACKAGE_LIST" | sed -nE 's/^[[:space:]]*(platforms;android-37(\.[0-9]+)*(-ext[0-9]+)?)[[:space:]]*\|.*/\1/p' | sort -Vu | tail -n 1)"
+            test -n "$PLATFORM_PACKAGE" || { echo 'No stable Android API 37 platform package found'; exit 1; }
+            SDK_PACKAGES+=("$PLATFORM_PACKAGE")
+          else
+            echo "Using Android API platform $(basename "$(dirname "$PLATFORM37_JAR")")"
           fi
           BT_AAPT2="$(find "$ANDROID_HOME/build-tools" -type f -name aapt2 2>/dev/null | sort -V | tail -n 1)"
           BT_DIR="${BT_AAPT2%/aapt2}"
           if [ -z "$BT_AAPT2" ] || [ ! -x "$BT_DIR/d8" ] || [ ! -x "$BT_DIR/zipalign" ] || [ ! -x "$BT_DIR/apksigner" ]; then
-            if ! PACKAGE_LIST="$(sdkmanager --sdk_root="$ANDROID_HOME" --list 2>&1)"; then
+            if [ -z "$PACKAGE_LIST" ] && ! PACKAGE_LIST="$(sdkmanager --sdk_root="$ANDROID_HOME" --list 2>&1)"; then
               DETAIL="$(printf '%s' "$PACKAGE_LIST" | tail -n 8 | tr '\n' ' ')"
               echo "::error title=Android SDK package listing failed::$DETAIL"
               exit 1
@@ -84,7 +95,8 @@ jobs:
               exit 1
             fi
           fi
-          test -f "$ANDROID_HOME/platforms/android-37/android.jar" || { echo 'Android API 37 was not installed'; exit 1; }
+          PLATFORM37_JAR="$(find "$ANDROID_HOME/platforms" -type f -name android.jar 2>/dev/null | grep -E '/android-37(\.[0-9]+)*(-ext[0-9]+)?/android.jar$' | sort -V | tail -n 1)"
+          test -n "$PLATFORM37_JAR" || { echo 'Android API 37 stable platform was not installed'; exit 1; }
           echo 'Android API 37 and required Build Tools are ready'
 
       - name: Download R8
