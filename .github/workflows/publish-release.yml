@@ -49,6 +49,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          PLATFORM_LIST="$(find "$ANDROID_HOME/platforms" -type f -name android.jar 2>/dev/null | sed -E 's#^.*/platforms/##; s#/android.jar$##' | sort -V | tr '\n' ',')"
+          TOOL_LIST="$(find "$ANDROID_HOME/build-tools" -type f -name aapt2 2>/dev/null | sed -E 's#^.*/build-tools/##; s#/aapt2$##' | sort -V | tr '\n' ',')"
+          echo "::notice title=Runner Android SDK inventory::platforms=${PLATFORM_LIST:-none}; build-tools=${TOOL_LIST:-none}"
           SDK_PACKAGES=()
           if [ ! -f "$ANDROID_HOME/platforms/android-37/android.jar" ]; then
             SDK_PACKAGES+=('platforms;android-37')
