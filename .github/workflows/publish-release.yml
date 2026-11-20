@@ -4,9 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag (must match AndroidManifest.xml versionName, e.g. v2.4)
+        description: Release tag matching AndroidManifest.xml versionName (for example v2.5)
         required: true
         type: string
+      publish_release:
+        description: Publish a GitHub Release from this non-main branch
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -137,7 +142,7 @@ jobs:
               raise SystemExit(f'{tag!r} must match manifest versionName {version!r} as v{version}')
           PY
           then
-            echo '::error title=Release tag mismatch::The supplied tag must match AndroidManifest.xml versionName (v2.4).'
+            echo '::error title=Release tag mismatch::The supplied tag must match AndroidManifest.xml versionName.'
             exit 1
           fi
           for name in RUSTOREDL_KEYSTORE_BASE64 RUSTOREDL_KEYSTORE_PASSWORD RUSTOREDL_KEY_ALIAS; do
@@ -180,9 +185,9 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      # A selected feature branch builds an artifact only. Release publication is main-only.
+      # Release publication is automatic on main; feature branches require explicit opt-in.
       - name: Publish GitHub release
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' || inputs.publish_release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
