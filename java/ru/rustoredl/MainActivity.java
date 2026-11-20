@@ -753,9 +753,13 @@ public class MainActivity extends Activity {
                     saved = saveToDownloads(ctx, pkg, version, apks);
                 }
                 HistoryActivity.addRecord(ctx, pkg, appName, version, apks, saved);
-                ui.status("Устанавливаю (" + apks.size() + (apks.size() == 1 ? " файл)…" : " файлов)…"));
-                install(ctx, apks, pkg, version);
-                ui.finished("Запрошена установка", true);
+                if (ctx.getPackageManager().canRequestPackageInstalls()) {
+                    ui.status("Устанавливаю (" + apks.size() + (apks.size() == 1 ? " файл)…" : " файлов)…"));
+                    install(ctx, apks, pkg, version);
+                    ui.finished("Скачано · запрос отправлен установщику", true);
+                } else {
+                    ui.finished("Скачано · APK сохранены в Истории; разрешение нужно только для установки", true);
+                }
             } catch (Cancelled c) {
                 dlActive = false;
                 part.delete();
@@ -770,7 +774,6 @@ public class MainActivity extends Activity {
 
     void onDownload() {
         if (pkg == null || appId == 0) { status("Сначала найди приложение"); return; }
-        if (!ensureInstallPermission(this)) return;
         final boolean saveCopy = saveCopyCb.isChecked();
         if (saveCopy && Build.VERSION.SDK_INT <= 28 && checkSelfPermission(
                 "android.permission.WRITE_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED) {
@@ -871,7 +874,6 @@ public class MainActivity extends Activity {
         final OtaChecker.Info inf = otaInfo;
         if (inf == null) return;
         if (DownloadService.busy()) { status("Сначала дождись текущую загрузку"); return; }
-        if (!ensureInstallPermission(this)) return;
 
         View pv = getLayoutInflater().inflate(R.layout.dialog_ota_progress, null);
         final TextView verTv = pv.findViewById(R.id.otaProgressVersion);
@@ -926,7 +928,39 @@ public class MainActivity extends Activity {
                 }
                 android.util.Log.d("RuStoreOTA", "ota apk downloaded " + apk.length() + " bytes, calling install");
                 if (!getPackageManager().canRequestPackageInstalls()) {
-                    throw new Exception("нет разрешения «Установка неизвестных приложений» — выдай в системе и нажми Обновить снова");
+                    File installDir = new File(getCacheDir(), "install");
+                    if (!installDir.exists() && !installDir.mkdirs())
+                        throw new Exception("не удалось сохранить APK обновления");
+                    File savedApk = new File(installDir, "self_update_v" + inf.version.replaceAll("[^A-Za-z0-9._-]", "_")
+                            + "_" + System.currentTimeMillis() + ".apk");
+                    try (InputStream input = new FileInputStream(apk);
+                         FileOutputStream output = new FileOutputStream(savedApk)) {
+                        copy(input, output);
+                        output.getFD().sync();
+                    }
+                    org.json.JSONArray savedCopy = new org.json.JSONArray();
+                    if (prefs.getBoolean("saveCopy", false)) {
+                        try {
+                            savedCopy = saveToDownloads(this, getPackageName(), inf.version,
+                                    java.util.Collections.singletonList(savedApk));
+                        } catch (Exception copyError) {
+                            android.util.Log.w("RuStoreOTA", "Could not save OTA copy to Downloads", copyError);
+                        }
+                    }
+                    String label = getPackageName();
+                    try {
+                        label = String.valueOf(getPackageManager().getApplicationLabel(
+                                getPackageManager().getApplicationInfo(getPackageName(), 0)));
+                    } catch (Exception ignore) {}
+                    HistoryActivity.addRecord(this, getPackageName(), label, inf.version,
+                            java.util.Collections.singletonList(savedApk), savedCopy);
+                    apk.delete();
+                    dlActive = false;
+                    ui.post(() -> {
+                        dlg.dismiss();
+                        status("Обновление скачано и сохранено в Истории. Разрешение понадобится только для установки.");
+                    });
+                    return;
                 }
                 install(this, java.util.Collections.singletonList(apk));
                 dlActive = false;
@@ -958,6 +992,7 @@ public class MainActivity extends Activity {
                         + human(HistoryActivity.filesSize(fs))
                         + " в кэше). Установить сохранённый файл или скачать заново?")
                 .setPositiveButton("Установить", (d, w) -> {
+                    if (!ensureInstallPermission(this)) return;
                     busy(true);
                     status("Устанавливаю сохранённый файл…");
                     HistoryActivity.installFiles(this, fs, rec);
@@ -1283,7 +1318,9 @@ public class MainActivity extends Activity {
             // FLAG_MUTABLE обязателен с Android 12: система дописывает статус в intent
             int flags = PendingIntent.FLAG_UPDATE_CURRENT;
             if (Build.VERSION.SDK_INT >= 31) flags |= PendingIntent.FLAG_MUTABLE;
-            PendingIntent pending = PendingIntent.getBroadcast(ctx, 1, cb, flags);
+            // У каждой install-сессии свой callback: пакетные обновления могут
+            // коммититься параллельно, и общий requestCode перезаписывал бы extras.
+            PendingIntent pending = PendingIntent.getBroadcast(ctx, id, cb, flags);
             android.util.Log.d("RuStoreOTA", "commit session " + id + " -> InstallReceiver");
             s.commit(pending.getIntentSender());
             android.util.Log.d("RuStoreOTA", "commit OK");
@@ -1295,8 +1332,8 @@ public class MainActivity extends Activity {
     static List<File> extractApks(Context ctx, File zip) throws Exception {
         File dir = new File(ctx.getCacheDir(), "install");
         dir.mkdirs();
-        File[] old = dir.listFiles();
-        if (old != null) for (File f : old) f.delete();
+        // Не чистим общий каталог: история и параллельные обновления могут ссылаться на его файлы.
+        String prefix = "download_" + System.currentTimeMillis() + "_" + System.nanoTime();
         List<File> out = new ArrayList<>();
         ZipFile z = new ZipFile(zip);
         try {
@@ -1306,7 +1343,7 @@ public class MainActivity extends Activity {
                 ZipEntry e = en.nextElement();
                 if (e.isDirectory()) continue;
                 if (!e.getName().toLowerCase().endsWith(".apk")) continue;
-                File f = new File(dir, (out.isEmpty() ? "base" : "split" + (++n)) + ".apk");
+                File f = new File(dir, prefix + (out.isEmpty() ? "_base" : "_split" + (++n)) + ".apk");
                 InputStream in = z.getInputStream(e);
                 FileOutputStream fo = new FileOutputStream(f);
                 copy(in, fo);

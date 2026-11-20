@@ -142,6 +142,71 @@
                 android:textColor="@color/accent"
                 android:textSize="13.5sp"/>
 
+            <!-- Ограничение количества одновременно загружаемых приложений -->
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="16dp"
+                android:layout_marginRight="16dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card"
+                android:padding="18dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Параллельные обновления"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="15sp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Максимум приложений, скачиваемых одновременно кнопкой «Обновить все»"
+                    android:textColor="@color/textTertiary"
+                    android:textSize="12sp"/>
+
+                <TextView
+                    android:id="@+id/updateConcurrencyValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/accent"
+                    android:textSize="17sp"/>
+
+                <SeekBar
+                    android:id="@+id/updateConcurrencySeek"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:max="7"
+                    android:progressTint="@color/accent"
+                    android:thumbTint="@color/accent"/>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="1 приложение"
+                        android:textColor="@color/textTertiary"
+                        android:textSize="11sp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="8 приложений"
+                        android:textColor="@color/textTertiary"
+                        android:textSize="11sp"/>
+                </LinearLayout>
+            </LinearLayout>
+
             <!-- карточка: обновления приложений -->
             <LinearLayout
                 android:orientation="vertical"

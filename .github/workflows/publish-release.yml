@@ -4,20 +4,24 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag (must match AndroidManifest.xml versionName, e.g. v2.4)
+        description: Release tag matching AndroidManifest.xml versionName (for example v2.5)
         required: true
         type: string
+      publish_release:
+        description: Publish a GitHub Release from this non-main branch
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
 
 concurrency:
-  group: rustoredl-release-${{ inputs.tag }}
+  group: rustoredl-${{ inputs.tag }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -138,7 +142,7 @@ jobs:
               raise SystemExit(f'{tag!r} must match manifest versionName {version!r} as v{version}')
           PY
           then
-            echo '::error title=Release tag mismatch::The supplied tag must match AndroidManifest.xml versionName (v2.4).'
+            echo '::error title=Release tag mismatch::The supplied tag must match AndroidManifest.xml versionName.'
             exit 1
           fi
           for name in RUSTOREDL_KEYSTORE_BASE64 RUSTOREDL_KEYSTORE_PASSWORD RUSTOREDL_KEY_ALIAS; do
@@ -173,7 +177,17 @@ jobs:
           KS_ALIAS="$RUSTOREDL_KEY_ALIAS" \
           ./build.sh
 
+      - name: Upload signed APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RuStoreDL-${{ inputs.tag }}-run${{ github.run_number }}
+          path: RuStoreDL.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      # Release publication is automatic on main; feature branches require explicit opt-in.
       - name: Publish GitHub release
+        if: github.ref == 'refs/heads/main' || inputs.publish_release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}

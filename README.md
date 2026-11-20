@@ -388,8 +388,9 @@ KS_ALIAS="$RELEASE_KEY_ALIAS" \
 
 Workflow `.github/workflows/publish-release.yml` собирает APK на GitHub Actions,
 подписывает release-ключом и создаёт GitHub Release с `RuStoreDL.apk` как asset.
-Workflow запускается вручную **из `main`**; тег должен совпадать с `versionName`
-в манифесте (для этого снимка — `v2.4`). Для запуска сначала добавьте в
+Workflow запускается вручную; тег должен совпадать с `versionName` в манифесте.
+На `main` успешная сборка публикуется автоматически, а для публикации из другой
+ветки нужно явно включить вход `publish_release`. Для запуска сначала добавьте в
 `Settings → Secrets and variables → Actions` следующие repository secrets:
 
 - `RUSTOREDL_KEYSTORE_BASE64` — keystore в Base64 (Linux: `base64 -w0 release.keystore`);
@@ -400,8 +401,9 @@ Workflow запускается вручную **из `main`**; тег долж�
 Используйте тот же release-ключ, которым должны подписываться обновления
 установок приложения. Не передавайте keystore или пароль в чат и не коммитьте
 их. Затем в GitHub откройте **Actions → Build and publish signed APK → Run
-workflow**, выберите `main` и укажите тег `v2.4`. Собранный `.idsig` не
-публикуется: для обычной установки достаточно подписи APK.
+workflow**, укажите тег, совпадающий с `versionName` (текущий — `v2.5`), и при
+запуске не из `main` включите `publish_release`. Собранный `.idsig` не публикуется:
+для обычной установки достаточно подписи APK.
 
 ## Автоподбор кода версии клиента (ruStoreVerCode)
 

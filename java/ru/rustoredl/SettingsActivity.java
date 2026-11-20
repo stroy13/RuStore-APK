@@ -127,6 +127,26 @@ public class SettingsActivity extends Activity {
             getSharedPreferences("cfg", MODE_PRIVATE).edit().putInt("dlThreads", 8).apply();
             Toast.makeText(this, "Вернули оптимум: 8 потоков", Toast.LENGTH_SHORT).show();
         });
+
+        SeekBar updateSeek = findViewById(R.id.updateConcurrencySeek);
+        TextView updateValue = findViewById(R.id.updateConcurrencyValue);
+        int parallel = Math.max(1, Math.min(8, getSharedPreferences("cfg", MODE_PRIVATE)
+                .getInt("updateConcurrency", 3)));
+        updateSeek.setProgress(parallel - 1);
+        updateValue.setText("Одновременно: " + parallel);
+        updateSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
+                updateValue.setText("Одновременно: " + (progress + 1));
+            }
+            @Override public void onStartTrackingTouch(SeekBar bar) {}
+            @Override public void onStopTrackingTouch(SeekBar bar) {
+                int count = bar.getProgress() + 1;
+                getSharedPreferences("cfg", MODE_PRIVATE).edit()
+                        .putInt("updateConcurrency", count).apply();
+                Toast.makeText(SettingsActivity.this,
+                        "Одновременных загрузок: " + count, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void refreshChips(int[] ids, int[] hours, int sel) {
