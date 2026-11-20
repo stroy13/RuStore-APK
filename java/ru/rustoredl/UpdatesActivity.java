@@ -28,8 +28,15 @@ import android.widget.Toast;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -55,8 +62,10 @@ public class UpdatesActivity extends Activity {
         String msg;
         boolean blocked;             // витрина требует более новый Android
         boolean sigMismatch;         // подпись витрины ≠ подпись установленного
-        File partFile;               // ".part" текущего скачивания (для отмены)
-        boolean cancelRequested;      // не показывать отмену как ошибку после callback службы
+        volatile boolean cancelRequested;
+        volatile HttpURLConnection connection;
+        Thread worker;
+        boolean started;
     }
 
     static final int ST_IDLE = 0, ST_DOWNLOADING = 1, ST_DONE = 2, ST_ERROR = 3;
@@ -66,13 +75,17 @@ public class UpdatesActivity extends Activity {
     private MyAdapter adapter;
     private TextView status;
     private Button checkBtn;
+    private Button updateAllBtn;
     private LinearLayout progressBox;
     private ProgressBar progressBar;
     private TextView progressText;
     private volatile boolean scanning;
     private final java.util.ArrayList<String> failed = new java.util.ArrayList<>();
     private ExecutorService pool;
-    private final Map<String, Info> active = new HashMap<>(); // pkg → идёт загрузка
+    private final Map<String, Info> active = new HashMap<>(); // pkg → в очереди или загружается
+    private final List<Info> pendingDownloads = new ArrayList<>();
+    private int runningDownloads;
+    private boolean destroyed;
 
     @Override
     protected void onCreate(Bundle b) {
@@ -82,6 +95,8 @@ public class UpdatesActivity extends Activity {
         status = findViewById(R.id.status);
         status.setOnClickListener(v -> showFailed());
         checkBtn = findViewById(R.id.checkBtn);
+        updateAllBtn = findViewById(R.id.updateAllBtn);
+        updateAllBtn.setOnClickListener(v -> updateAll());
         progressBox = findViewById(R.id.progressBox);
         progressBar = findViewById(R.id.progressBar);
         progressText = findViewById(R.id.progressText);
@@ -143,6 +158,7 @@ public class UpdatesActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        destroyed = true;
         scanning = false;
         if (pool != null) pool.shutdownNow();
         super.onDestroy();
@@ -166,8 +182,13 @@ public class UpdatesActivity extends Activity {
 
     private void startScan() {
         if (scanning) return;
+        if (!active.isEmpty()) {
+            Toast.makeText(this, "Дождись завершения текущих загрузок", Toast.LENGTH_SHORT).show();
+            return;
+        }
         scanning = true;
         data.clear();
+        updateAllBtn.setVisibility(View.GONE);
         synchronized (failed) { failed.clear(); }
         adapter.notifyDataSetChanged();
         checkBtn.setEnabled(false);
@@ -411,6 +432,7 @@ public class UpdatesActivity extends Activity {
         checkBtn.setEnabled(true);
         checkBtn.setText("Проверить снова");
         adapter.notifyDataSetChanged();
+        refreshUpdateAll();
         String extra = (missing > 0 ? " · нет в RuStore: " + missing : "")
                 + (hiddenSig > 0 ? " · скрыто по подписи: " + hiddenSig : "")
                 + (errors > 0 ? " · не удалось проверить: " + errors + " (тапни — покажу причины)" : "");
@@ -443,75 +465,296 @@ public class UpdatesActivity extends Activity {
     // ------------------------------------------------------- обновление в тап
 
     private void updateApp(final Info in) {
-        if (in.state == ST_DOWNLOADING || active.containsKey(in.pkg)) return;
-        if (!MainActivity.ensureInstallPermission(this)) return;
-
-        // версия уже скачана и файлы живы — предложим установить, а не качать заново
-        JSONObject already = HistoryActivity.findRecord(this, in.pkg, in.newV);
-        if (already != null) { offerAlready(in, already); return; }
-        startUpdate(in);
+        enqueueUpdate(in);
     }
 
-    /** Эта версия уже в истории — установить сохранённое или скачать заново? */
-    private void offerAlready(final Info in, JSONObject rec) {
-        final List<File> fs = HistoryActivity.recordFiles(this, rec);
-        new android.app.AlertDialog.Builder(this)
-                .setTitle(in.name)
-                .setMessage("Версия " + in.newV + " уже скачана ("
-                        + MainActivity.human(HistoryActivity.filesSize(fs))
-                        + " в кэше). Установить сохранённый файл или скачать заново?")
-                .setPositiveButton("Установить", (d, w) ->
-                        HistoryActivity.installFiles(this, fs, rec))
-                .setNegativeButton("Скачать заново", (d, w) -> startUpdate(in))
-                .setNeutralButton("Отмена", null)
-                .show();
+    private void updateAll() {
+        List<Info> selected = new ArrayList<>();
+        for (Info in : data) {
+            if (!in.blocked && in.state != ST_DONE && !active.containsKey(in.pkg)) selected.add(in);
+        }
+        if (selected.isEmpty()) {
+            Toast.makeText(this, "Нет доступных обновлений для загрузки", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        for (Info in : selected) enqueueUpdate(in);
+        status("В очереди " + selected.size() + " " + appsWord(selected.size())
+                + " · одновременно: " + updateConcurrency());
     }
 
-    private void startUpdate(final Info in) {
+    private static String appsWord(int n) {
+        int m = n % 100;
+        if (m >= 11 && m <= 14) return "приложений";
+        switch (n % 10) {
+            case 1: return "приложение";
+            case 2: case 3: case 4: return "приложения";
+            default: return "приложений";
+        }
+    }
+
+    private int updateConcurrency() {
+        return Math.max(1, Math.min(8, getSharedPreferences("cfg", MODE_PRIVATE)
+                .getInt("updateConcurrency", 3)));
+    }
+
+    private void enqueueUpdate(Info in) {
+        if (in == null || in.blocked || active.containsKey(in.pkg) || in.state == ST_DONE) return;
         in.state = ST_DOWNLOADING;
         in.pct = 0;
         in.cancelRequested = false;
-        in.msg = "Получаю ссылку…";
-        in.partFile = new File(getCacheDir(), "upd_" + in.pkg.hashCode() + ".zip.part");
+        in.started = false;
+        in.msg = "В очереди…";
         active.put(in.pkg, in);
+        pendingDownloads.add(in);
         adapter.notifyDataSetChanged();
+        refreshUpdateAll();
+        launchQueuedDownloads();
+    }
 
-        final boolean saveCopy = getSharedPreferences("cfg", Context.MODE_PRIVATE)
-                .getBoolean("saveCopy", false);
-        DownloadService.start(this, in.pkg, in.name, in.appId, in.newV, saveCopy,
-                new MainActivity.DlUi() {
-                    @Override public void status(String s) { in.msg = s; ui.post(adapter::notifyDataSetChanged); }
-                    @Override public void progress(boolean indet, int pct, long done, long total) {
-                        in.pct = indet ? -1 : Math.max(0, Math.min(100, pct));
-                        in.msg = indet
-                                ? "Скачиваю… " + MainActivity.human(done)
-                                : "Скачиваю… " + pct + "% из " + MainActivity.human(total);
-                        ui.post(adapter::notifyDataSetChanged);
+    /** Запускает только заданное настройкой количество независимых загрузок. */
+    private void launchQueuedDownloads() {
+        int limit = updateConcurrency();
+        while (runningDownloads < limit && !pendingDownloads.isEmpty()) {
+            Info in = pendingDownloads.remove(0);
+            if (in.cancelRequested) continue;
+            in.started = true;
+            runningDownloads++;
+            in.msg = "Получаю ссылку…";
+            Thread t = new Thread(() -> downloadUpdate(in), "update-" + in.pkg);
+            in.worker = t;
+            t.start();
+        }
+        if (!destroyed) adapter.notifyDataSetChanged();
+    }
+
+    private void cancelUpdate(Info in) {
+        in.cancelRequested = true;
+        pendingDownloads.remove(in);
+        HttpURLConnection c = in.connection;
+        if (c != null) c.disconnect();
+        Thread t = in.worker;
+        if (t != null) t.interrupt();
+        if (!in.started) {
+            active.remove(in.pkg);
+            in.state = ST_IDLE;
+            in.msg = null;
+            in.cancelRequested = false;
+            adapter.notifyDataSetChanged();
+            refreshUpdateAll();
+            launchQueuedDownloads();
+        } else {
+            in.msg = "Отменяю…";
+            adapter.notifyDataSetChanged();
+        }
+    }
+
+    private void downloadUpdate(Info in) {
+        File zip = null;
+        File staging = null;
+        List<File> apks = new ArrayList<>();
+        String result = "";
+        boolean ok = false;
+        try {
+            checkCancelled(in);
+            Context ctx = getApplicationContext();
+            JSONObject response = RuStoreApi.request(ctx, "POST", MainActivity.API + "/download-link",
+                    new JSONObject().put("appId", in.appId).put("firstInstall", true), null);
+            String apkUrl = response.getJSONObject("body").getString("apkUrl");
+            File work = new File(ctx.getCacheDir(), "update_downloads");
+            if (!work.exists() && !work.mkdirs()) throw new IOException("не удалось создать каталог загрузки");
+            String key = safeFilePart(in.pkg) + "_" + System.nanoTime();
+            zip = new File(work, key + ".zip");
+            downloadArchive(in, apkUrl, zip);
+            checkCancelled(in);
+            staging = new File(work, key);
+            if (!staging.mkdirs()) throw new IOException("не удалось подготовить APK");
+            List<File> extracted = extractUpdateApks(zip, staging, in);
+            if (extracted.isEmpty()) throw new IOException("в архиве нет APK");
+
+            File installDir = new File(ctx.getCacheDir(), "install");
+            if (!installDir.exists() && !installDir.mkdirs()) throw new IOException("не удалось создать хранилище APK");
+            String prefix = safeFilePart(in.pkg) + "_v" + safeFilePart(in.newV)
+                    + "_" + System.currentTimeMillis();
+            for (int i = 0; i < extracted.size(); i++) {
+                checkCancelled(in);
+                File src = extracted.get(i);
+                File dst = new File(installDir, prefix + (i == 0 ? "_base.apk" : "_split" + i + ".apk"));
+                if (!src.renameTo(dst)) copyFile(src, dst);
+                apks.add(dst);
+            }
+
+            org.json.JSONArray saved = new org.json.JSONArray();
+            if (ctx.getSharedPreferences("cfg", MODE_PRIVATE).getBoolean("saveCopy", false)) {
+                try {
+                    saved = MainActivity.saveToDownloads(ctx, in.pkg, in.newV, apks);
+                } catch (Exception copyError) {
+                    android.util.Log.w("RuStoreUpdates", "Could not save a Downloads copy", copyError);
+                }
+            }
+            HistoryActivity.addRecord(ctx, in.pkg, in.name, in.newV, apks, saved);
+
+            boolean canInstall = ctx.getPackageManager().canRequestPackageInstalls();
+            if (canInstall) {
+                try {
+                    MainActivity.install(ctx, apks, in.pkg, in.newV);
+                    result = "Скачано · запрос отправлен установщику";
+                } catch (Exception installError) {
+                    result = "Скачано · APK сохранены; установщик: " + humanize(installError);
+                }
+            } else {
+                result = "Скачано · APK готовы к установке из Истории";
+            }
+            ok = true;
+        } catch (Exception e) {
+            if (in.cancelRequested || e instanceof InterruptedException
+                    || Thread.currentThread().isInterrupted()) result = "Скачивание отменено";
+            else result = "Ошибка: " + humanize(e);
+        } finally {
+            if (in.connection != null) {
+                in.connection.disconnect();
+                in.connection = null;
+            }
+            if (zip != null) zip.delete();
+            if (staging != null) deleteTree(staging);
+            if (!ok) for (File apk : apks) apk.delete();
+            final boolean success = ok;
+            final String message = result;
+            ui.post(() -> finishUpdate(in, success, message));
+        }
+    }
+
+    private void downloadArchive(Info in, String url, File out) throws Exception {
+        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+        in.connection = c;
+        c.setConnectTimeout(20000);
+        c.setReadTimeout(60000);
+        c.setInstanceFollowRedirects(true);
+        c.setRequestProperty("Accept-Encoding", "identity");
+        int code = c.getResponseCode();
+        if (code < 200 || code >= 300) throw new IOException("HTTP " + code);
+        long total = c.getContentLengthLong();
+        long done = 0;
+        long lastUpdate = 0;
+        try (InputStream input = c.getInputStream(); FileOutputStream output = new FileOutputStream(out)) {
+            byte[] buffer = new byte[64 * 1024];
+            int n;
+            while ((n = input.read(buffer)) != -1) {
+                checkCancelled(in);
+                output.write(buffer, 0, n);
+                done += n;
+                long now = System.currentTimeMillis();
+                if (now - lastUpdate >= 350) {
+                    lastUpdate = now;
+                    final long bytes = done, expected = total;
+                    ui.post(() -> {
+                        if (in.state != ST_DOWNLOADING) return;
+                        in.pct = expected > 0 ? (int) Math.min(100, bytes * 100 / expected) : -1;
+                        in.msg = expected > 0
+                                ? "Скачиваю… " + in.pct + "% · " + MainActivity.human(bytes)
+                                : "Скачиваю… " + MainActivity.human(bytes);
+                        if (!destroyed) adapter.notifyDataSetChanged();
+                    });
+                }
+            }
+            output.getFD().sync();
+        } finally {
+            c.disconnect();
+            in.connection = null;
+        }
+        if (out.length() == 0) throw new IOException("получен пустой архив");
+    }
+
+    private List<File> extractUpdateApks(File archive, File staging, Info in) throws Exception {
+        List<File> out = new ArrayList<>();
+        try (ZipFile zip = new ZipFile(archive)) {
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+            while (entries.hasMoreElements()) {
+                checkCancelled(in);
+                ZipEntry entry = entries.nextElement();
+                if (entry.isDirectory() || !entry.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".apk")) continue;
+                File file = new File(staging, out.isEmpty() ? "base.apk" : "split" + out.size() + ".apk");
+                try (InputStream input = zip.getInputStream(entry); FileOutputStream output = new FileOutputStream(file)) {
+                    byte[] buffer = new byte[64 * 1024];
+                    int n;
+                    while ((n = input.read(buffer)) != -1) {
+                        checkCancelled(in);
+                        output.write(buffer, 0, n);
                     }
-                    @Override public int threads() {
-                        return Math.max(1, Math.min(16,
-                                getSharedPreferences("cfg", Context.MODE_PRIVATE).getInt("dlThreads", 8)));
-                    }
-                    @Override public void finished(String msg, boolean ok) {
-                        active.remove(in.pkg);
-                        boolean cancelled = (msg != null
-                                && msg.toLowerCase(java.util.Locale.ROOT).contains("отмен"))
-                                || (in.cancelRequested && !ok);
-                        in.cancelRequested = false;
-                        if (cancelled) {
-                            // Отмена — не ошибка и не красный статус; сбрасываем строку.
-                            in.state = ST_IDLE;
-                            in.pct = 0;
-                            in.msg = null;
-                            if (in.partFile != null) in.partFile.delete();
-                        } else {
-                            in.state = ok ? ST_DONE : ST_ERROR;
-                            in.msg = msg;
-                            if (!ok && in.partFile != null) in.partFile.delete();
-                        }
-                        ui.post(adapter::notifyDataSetChanged);
-                    }
-                });
+                }
+                out.add(file);
+            }
+        }
+        return out;
+    }
+
+    private static void copyFile(File src, File dst) throws IOException {
+        try (InputStream input = new FileInputStream(src); FileOutputStream output = new FileOutputStream(dst)) {
+            byte[] buffer = new byte[64 * 1024];
+            int n;
+            while ((n = input.read(buffer)) != -1) output.write(buffer, 0, n);
+            output.getFD().sync();
+        }
+    }
+
+    private static void checkCancelled(Info in) throws InterruptedException {
+        if (in.cancelRequested || Thread.currentThread().isInterrupted()) throw new InterruptedException("cancelled");
+    }
+
+    private static String safeFilePart(String value) {
+        if (value == null || value.isEmpty()) return "unknown";
+        return value.replaceAll("[^A-Za-z0-9._-]", "_");
+    }
+
+    private static void deleteTree(File f) {
+        if (f == null || !f.exists()) return;
+        File[] children = f.listFiles();
+        if (children != null) for (File child : children) deleteTree(child);
+        f.delete();
+    }
+
+    private void finishUpdate(Info in, boolean ok, String message) {
+        if (in.started) runningDownloads = Math.max(0, runningDownloads - 1);
+        in.started = false;
+        in.worker = null;
+        in.connection = null;
+        active.remove(in.pkg);
+        boolean cancelled = in.cancelRequested;
+        in.cancelRequested = false;
+        in.state = cancelled ? ST_IDLE : (ok ? ST_DONE : ST_ERROR);
+        in.pct = ok ? 100 : 0;
+        in.msg = cancelled ? null : message;
+        if (!destroyed) {
+            adapter.notifyDataSetChanged();
+            refreshUpdateAll();
+            int remaining = active.size();
+            status(remaining > 0 ? "Загрузки: осталось " + remaining + " · выполняется " + runningDownloads
+                    : (ok ? message : "Загрузка завершена: " + message));
+        }
+        launchQueuedDownloads();
+    }
+
+    private void refreshUpdateAll() {
+        if (updateAllBtn == null || scanning) return;
+        boolean available = false;
+        for (Info in : data) {
+            if (!in.blocked && in.state != ST_DONE && !active.containsKey(in.pkg)) {
+                available = true;
+                break;
+            }
+        }
+        updateAllBtn.setVisibility(available ? View.VISIBLE : View.GONE);
+        if (available) updateAllBtn.setEnabled(true);
+    }
+
+    /** Эта версия уже скачана — повторно открыть системное подтверждение. */
+    private void installSaved(Info in) {
+        JSONObject rec = HistoryActivity.findRecord(this, in.pkg, in.newV);
+        if (rec == null) {
+            Toast.makeText(this, "Скачанный APK больше не найден", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!MainActivity.ensureInstallPermission(this)) return;
+        HistoryActivity.installFiles(this, HistoryActivity.recordFiles(this, rec), rec);
     }
 
     // ------------------------------------------------------- адаптер
@@ -553,22 +796,17 @@ public class UpdatesActivity extends Activity {
                 btn.setVisibility(View.VISIBLE);
                 btn.setEnabled(true);
                 btn.setText("Отмена");
-                btn.setOnClickListener(bv -> {
-                    in.cancelRequested = true;
-                    in.state = ST_IDLE;
-                    in.msg = null;
-                    // Оставляем active до callback: нельзя случайно запустить
-                    // вторую загрузку, пока служба завершает отмену первой.
-                    MainActivity.onCancelDownload();
-                    adapter.notifyDataSetChanged();
-                });
+                btn.setOnClickListener(bv -> cancelUpdate(in));
             } else {
                 pb.setVisibility(View.GONE);
                 if (in.state == ST_DONE) {
                     state.setVisibility(View.VISIBLE);
                     state.setTextColor(getResources().getColor(R.color.success));
-                    state.setText("Обновлено ✓");
-                    btn.setVisibility(View.GONE);
+                    state.setText(in.msg == null ? "Скачано · APK готовы к установке" : in.msg);
+                    btn.setVisibility(View.VISIBLE);
+                    btn.setText("Установить");
+                    btn.setEnabled(true);
+                    btn.setOnClickListener(bv -> installSaved(in));
                 } else {
                     btn.setVisibility(in.blocked ? View.GONE : View.VISIBLE);
                     boolean busy = active.containsKey(in.pkg);

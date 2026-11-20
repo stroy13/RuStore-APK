@@ -12,12 +12,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: rustoredl-release-${{ inputs.tag }}
+  group: rustoredl-${{ inputs.tag }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -173,7 +172,17 @@ jobs:
           KS_ALIAS="$RUSTOREDL_KEY_ALIAS" \
           ./build.sh
 
+      - name: Upload signed APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RuStoreDL-${{ inputs.tag }}-${{ github.ref_name }}
+          path: RuStoreDL.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      # A selected feature branch builds an artifact only. Release publication is main-only.
       - name: Publish GitHub release
+        if: github.ref == 'refs/heads/main'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
