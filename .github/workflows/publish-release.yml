@@ -175,7 +175,7 @@ jobs:
       - name: Upload signed APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: RuStoreDL-${{ inputs.tag }}-${{ github.ref_name }}
+          name: RuStoreDL-${{ inputs.tag }}-run${{ github.run_number }}
           path: RuStoreDL.apk
           if-no-files-found: error
           retention-days: 14
